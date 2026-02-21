@@ -55,8 +55,11 @@ const employeeCreateSchema = {
   department: { in: ["body"], notEmpty: { errorMessage: "department is required" } }
 };
 
+const isUrl = (v) => typeof v === "string" && /^https?:\/\//i.test(v);
+
 const uploadToCloudinaryIfNeeded = async (photoString) => {
   if (!photoString) return "";
+  if (isUrl(photoString)) return photoString;
   const res = await cloudinary.uploader.upload(photoString, { folder: "comp3133_employees" });
   return res.secure_url || "";
 };
@@ -70,7 +73,19 @@ const mapMongoDupError = (err) => {
   return null;
 };
 
+const iso = (v) => (v instanceof Date ? v.toISOString() : v ? String(v) : null);
+
 const resolvers = {
+  User: {
+    created_at: (u) => iso(u.created_at),
+    updated_at: (u) => iso(u.updated_at)
+  },
+  Employee: {
+    date_of_joining: (e) => iso(e.date_of_joining),
+    created_at: (e) => iso(e.created_at),
+    updated_at: (e) => iso(e.updated_at)
+  },
+
   Query: {
     login: async (_, args) => {
       const errors = await runValidation(args, loginSchema);
